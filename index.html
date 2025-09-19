@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fitness App (MVP)</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#14181C"/>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Fitness App</h1>
+    <nav>
+      <button class="tab-btn" data-tab="today">Today</button>
+      <button class="tab-btn" data-tab="programs">Programs</button>
+      <button class="tab-btn" data-tab="timer">Timer</button>
+      <button class="tab-btn" data-tab="data">Data</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- TODAY / WORKOUT LOGGER -->
+    <section id="tab-today" class="tab active">
+      <h2>Log Workout</h2>
+      <div class="grid g2">
+        <div>
+          <label>Program</label>
+          <select id="selProgram"></select>
+        </div>
+        <div>
+          <label>Week</label>
+          <select id="selWeek"></select>
+        </div>
+        <div>
+          <label>Day</label>
+          <select id="selDay"></select>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Exercises for this Day</h3>
+        <div id="dayExercises"></div>
+        <button id="btnAddExerciseToDay" class="secondary">+ Add exercise to this Day</button>
+      </div>
+
+      <div class="card">
+        <h3>Current Session</h3>
+        <div id="sessionExercisePicker"></div>
+        <div id="sessionSets"></div>
+        <button id="btnSaveSession" class="primary">Save Session</button>
+      </div>
+    </section>
+
+    <!-- PROGRAMS -->
+    <section id="tab-programs" class="tab">
+      <h2>Programs & Periodization</h2>
+
+      <div class="card">
+        <h3>Create / Edit Program</h3>
+        <div class="grid g2">
+          <input id="programName" placeholder="Program name (e.g., 5x5 Strength)"/>
+          <input id="programNotes" placeholder="Notes / Goals"/>
+        </div>
+        <div class="grid g3">
+          <button id="btnCreateProgram" class="primary">Create Program</button>
+          <button id="btnRenameProgram" class="secondary">Rename</button>
+          <button id="btnDeleteProgram" class="danger">Delete</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Weeks in Program</h3>
+        <div class="grid g3">
+          <input id="weekLabel" placeholder="Week label (e.g., Week 1 - Accumulation)"/>
+          <button id="btnAddWeek" class="secondary">+ Add Week</button>
+        </div>
+        <div id="weeksList"></div>
+      </div>
+
+      <div class="card">
+        <h3>Days in Week</h3>
+        <div class="grid g3">
+          <input id="dayLabel" placeholder="Day label (e.g., Day 1 - Upper)"/>
+          <button id="btnAddDay" class="secondary">+ Add Day</button>
+        </div>
+        <div id="daysList"></div>
+      </div>
+
+      <div class="card">
+        <h3>Exercises Library</h3>
+        <div class="grid g3">
+          <input id="exName" placeholder="Exercise name (e.g., Bench Press)"/>
+          <input id="exNotes" placeholder="Cues / Notes (optional)"/>
+          <button id="btnAddExercise" class="secondary">+ Add to Library</button>
+        </div>
+        <div id="exerciseLibrary"></div>
+      </div>
+    </section>
+
+    <!-- TIMER -->
+    <section id="tab-timer" class="tab">
+      <h2>Rest Timer</h2>
+      <div class="card">
+        <div class="grid g4">
+          <button class="ghost preset" data-sec="60">1:00</button>
+          <button class="ghost preset" data-sec="90">1:30</button>
+          <button class="ghost preset" data-sec="180">3:00</button>
+          <input id="customSec" type="number" min="5" step="5" placeholder="Custom (sec)" />
+        </div>
+        <div class="timer-display">
+          <div id="timerScreen">00:00</div>
+          <div class="grid g3">
+            <button id="btnStart" class="primary">Start</button>
+            <button id="btnPause" class="secondary">Pause</button>
+            <button id="btnReset" class="danger">Reset</button>
+          </div>
+        </div>
+        <label><input type="checkbox" id="soundEnabled" checked> Ding when done</label>
+      </div>
+    </section>
+
+    <!-- DATA / EXPORT -->
+    <section id="tab-data" class="tab">
+      <h2>Data</h2>
+      <div class="card">
+        <div class="grid g3">
+          <button id="btnExport" class="secondary">Export JSON</button>
+          <input id="importFile" type="file" accept="application/json"/>
+          <button id="btnImport" class="secondary">Import JSON</button>
+        </div>
+        <p class="muted">All data is saved locally (IndexedDB). Export regularly if you switch devices.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>Offline-ready • IndexedDB • GitHub Pages friendly</small>
+  </footer>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+  </script>
+</body>
+</html>
