@@ -63,10 +63,20 @@
           <input id="programNotes" placeholder="Notes / Goals"/>
         </div>
         <div class="grid g3">
+          <select id="programSplit">
+            <option value="custom">Custom (I'll add days)</option>
+            <option value="bro">Bro Split (Chest / Back / Shoulders / Arms / Legs)</option>
+            <option value="ppl">Push / Pull / Legs</option>
+            <option value="ulppl">Upper / Lower / Push / Pull / Legs</option>
+          </select>
+          <input id="programWeeks" type="number" min="1" max="52" value="4" placeholder="# of weeks"/>
           <button id="btnCreateProgram" class="primary">Create Program</button>
+        </div>
+        <div class="grid g3">
           <button id="btnRenameProgram" class="secondary">Rename</button>
           <button id="btnDeleteProgram" class="danger">Delete</button>
         </div>
+        <p class="small">Selecting a split + # of weeks auto-generates Weeks and Days. You can edit later.</p>
       </div>
 
       <div class="card">

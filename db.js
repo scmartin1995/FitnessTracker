@@ -3,14 +3,14 @@ const DB_NAME = 'fitness_app_db';
 const DB_VERSION = 1;
 
 // Entities:
-// programs: {id, name, notes, createdAt}
+// programs: {id, name, notes, split, weeksCount, createdAt}
 // weeks: {id, programId, label, order}
 // days: {id, weekId, label, order, exerciseIds: []}
 // exercises: {id, name, notes}
 // sessions: {id, dateISO, programId, weekId, dayId}
 // sets: {id, sessionId, exerciseId, reps, weight, rpe, timestamp}
+// lastWeight: {exerciseId, weight}
 
-// also track lastWeight per exercise: {exerciseId -> number}
 let dbPromise;
 
 function openDB() {

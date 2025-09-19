@@ -1,8 +1,15 @@
 import { DB } from './db.js';
 
-// Simple state
+// helpers
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+function splitTemplateDays(split){
+  if (split === 'bro') return ['Chest','Back','Shoulders','Arms','Legs'];
+  if (split === 'ppl') return ['Push','Pull','Legs'];
+  if (split === 'ulppl') return ['Upper','Lower','Push','Pull','Legs'];
+  return [];
+}
 
 // Tabs
 $$('.tab-btn').forEach(btn => {
@@ -25,14 +32,12 @@ function fmt(sec) {
 
 function beep() {
   if (!soundEnabled.checked) return;
-  // WebAudio beep
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   const o = ctx.createOscillator();
   const g = ctx.createGain();
   o.type = 'sine';
   o.frequency.value = 880;
-  o.connect(g);
-  g.connect(ctx.destination);
+  o.connect(g); g.connect(ctx.destination);
   o.start();
   g.gain.setValueAtTime(0.001, ctx.currentTime);
   g.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime + 0.01);
@@ -62,10 +67,7 @@ function startTimer(seconds) {
   tick();
 }
 
-$$('.preset').forEach(b => b.addEventListener('click', () => {
-  startTimer(Number(b.dataset.sec));
-}));
-
+$$('.preset').forEach(b => b.addEventListener('click', () => startTimer(Number(b.dataset.sec))));
 $('#btnStart').addEventListener('click', () => {
   const custom = Number($('#customSec').value || 0);
   const current = screen.textContent.split(':').reduce((m,s)=>Number(m)*60+Number(s));
@@ -115,7 +117,21 @@ async function refreshDays() {
 function renderWeeksList(weeks) {
   const el = $('#weeksList');
   if (!weeks.length) return el.innerHTML = `<p class="small">No weeks yet.</p>`;
-  el.innerHTML = weeks.map(w => `<div class="list-item"><div>${w.label}</div><div class="small">order ${w.order ?? 0}</div></div>`).join('');
+  el.innerHTML = '';
+  weeks.sort((a,b)=> (a.order??0) - (b.order??0));
+  weeks.forEach(async (w) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'card';
+    wrap.innerHTML = `<div class="list-item"><strong>${w.label}</strong><span class="small">order ${w.order ?? 0}</span></div><div class="list" id="days_for_${w.id}"><div class="small">Loading days…</div></div>`;
+    el.appendChild(wrap);
+    const days = await DB.indexGetAll('days','by_week', w.id);
+    const holder = wrap.querySelector('#days_for_'+w.id);
+    if (!days.length) { holder.innerHTML = `<div class="small">No days yet.</div>`; }
+    else {
+      days.sort((a,b)=> (a.order??0) - (b.order??0));
+      holder.innerHTML = days.map(d => `<div class="list-item"><div>${d.label}</div><div class="small">${(d.exerciseIds||[]).length} exercises</div></div>`).join('');
+    }
+  });
 }
 
 function renderDaysList(days) {
@@ -201,7 +217,7 @@ async function showLastWeightHint() {
   const last = await DB.get('lastWeight', exId);
   let msg = 'No history yet.';
   if (last && typeof last.weight === 'number') {
-    const suggestion = Math.round((last.weight * 1.025)*100)/100; // +2.5%
+    const suggestion = Math.round((last.weight * 1.025)*100)/100;
     msg = `Last: ${last.weight}. Suggested next: ${suggestion}`;
   }
   $('#lastWeightHint').textContent = msg;
@@ -228,7 +244,6 @@ async function addSetToSession() {
   const set = { id: DB.uid('set'), sessionId: currentSession.id, exerciseId: exId, reps, weight, timestamp: Date.now() };
   currentSession.sets.push(set);
   await DB.put('sets', set);
-  // update lastWeight
   if (!isNaN(weight) && weight>0) {
     await DB.put('lastWeight', { exerciseId: exId, weight });
   }
@@ -262,15 +277,31 @@ $('#btnSaveSession').addEventListener('click', async () => {
   renderSessionSetsTable();
 });
 
-// Create Program
+// Create Program with split + auto weeks/days
 $('#btnCreateProgram').addEventListener('click', async () => {
   const name = $('#programName').value.trim() || 'New Program';
   const notes = $('#programNotes').value.trim();
-  const p = { id: DB.uid('prog'), name, notes, createdAt: Date.now() };
+  const split = $('#programSplit').value;
+  const weeksCount = Math.max(1, Math.min(52, Number($('#programWeeks').value || 4)));
+  const p = { id: DB.uid('prog'), name, notes, createdAt: Date.now(), split, weeksCount };
   await DB.add('programs', p);
+
+  const templateDays = splitTemplateDays(split);
+  for (let w = 1; w <= weeksCount; w++) {
+    const week = { id: DB.uid('week'), programId: p.id, label: `Week ${w}`, order: w };
+    await DB.add('weeks', week);
+    if (templateDays.length){
+      for (const dLabel of templateDays) {
+        const day = { id: DB.uid('day'), weekId: week.id, label: dLabel, order: Date.now(), exerciseIds: [] };
+        await DB.add('days', day);
+      }
+    }
+  }
+
   $('#programName').value = '';
   $('#programNotes').value = '';
   await refreshProgramSelectors();
+  document.getElementById('tab-programs').scrollIntoView({behavior:'smooth'});
 });
 
 $('#btnRenameProgram').addEventListener('click', async () => {
@@ -333,7 +364,6 @@ $('#btnAddExercise').addEventListener('click', async () => {
 });
 
 $('#btnAddExerciseToDay')?.addEventListener('click', () => {
-  // scroll to library
   document.getElementById('tab-programs').scrollIntoView({behavior:'smooth'});
 });
 
@@ -363,9 +393,9 @@ $('#btnImport').addEventListener('click', async () => {
   }
 });
 
-// Initial load
+// Init
 (async function init() {
-  await DB.all('programs'); // ensure DB open
+  await DB.all('programs');
   await refreshProgramSelectors();
   renderExerciseLibrary();
 })();
